@@ -2,5 +2,12 @@
 name = "elsewhere"
 version = "0.1.0"
 edition = "2024"
+license = "GPL-3.0-or-later"
+description = "A local POSSE CLI for static-site writers."
 
 [dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+toml = "1"
