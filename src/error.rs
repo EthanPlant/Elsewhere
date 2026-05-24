@@ -9,4 +9,31 @@ pub enum ElsewhereError {
 
     #[error("configuration file already exists: {0} (use --force to overwrite)")]
     ConfigExists(PathBuf),
+
+    #[error("Markdown file is missing front matter; expected TOML front matter delimited by +++")]
+    MissingFrontMatter,
+
+    #[error("front matter is missing closing delimiter: {0}")]
+    UnclosedFrontMatter(&'static str),
+
+    #[error("YAML front matter is not supported yet; use TOML front matter delimited by +++")]
+    UnsupportedYamlFrontMatter,
+
+    #[error("failed to parse TOML front matter: {0}")]
+    InvalidTomlFrontMatter(#[from] toml::de::Error),
+
+    #[error("front matter must be a TOML table")]
+    InvalidFrontMatterRoot,
+
+    #[error("front matter is missing required field `{0}`")]
+    MissingRequiredField(&'static str),
+
+    #[error("front matter field `{field}` must be {expected}")]
+    InvalidFrontMatterField {
+        field: &'static str,
+        expected: &'static str,
+    },
+
+    #[error("{target} rendering is not implemented yet")]
+    RendererNotImplemented { target: String },
 }

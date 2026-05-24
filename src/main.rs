@@ -1,7 +1,3 @@
-mod cli;
-mod config;
-mod error;
-
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -11,6 +7,16 @@ use clap::Parser;
 use crate::cli::{Cli, Commands, RenderTarget};
 use crate::config::Config;
 use crate::error::ElsewhereError;
+use crate::post::CanonicalPost;
+use crate::sources::Source;
+use crate::sources::generic_markdown::GenericMarkdownSource;
+
+mod cli;
+mod config;
+mod error;
+mod frontmatter;
+mod post;
+mod sources;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -31,7 +37,7 @@ fn init(force: bool) -> Result<()> {
 
     let config = Config::default();
     let serialized =
-        toml::to_string_pretty(&config).context("failed to serialize starter configuration")?;
+        toml::to_string_pretty(&config).context("failed to serialize default configuration")?;
 
     fs::write(&path, serialized).with_context(|| format!("failed to write {}", path.display()))?;
 
@@ -44,28 +50,45 @@ fn init(force: bool) -> Result<()> {
 fn plan(post: PathBuf) -> Result<()> {
     ensure_post_exists(&post)?;
 
-    println!("Elsewhere plan");
-    println!();
-    println!("Canonical");
-    println!("  Post:   {}", post.display());
-    println!("  Status: placeholder");
+    let post = read_generic_markdown_post(&post)?;
+
+    println!("Post");
+    println!("Title: {}", post.title);
+    println!(
+        "Description: {}",
+        post.description.as_deref().unwrap_or("not set")
+    );
+    println!(
+        "Canonical URL: {}",
+        post.canonical_url.as_deref().unwrap_or("not set")
+    );
+
+    if post.tags.is_empty() {
+        println!("Tags: none");
+    } else {
+        println!("Tags: {}", post.tags.join(", "));
+    }
+
     println!();
     println!("Available renders:");
-    println!("  - mastodon");
-    println!("  - bluesky");
-    println!("  - substack");
-    println!();
-    println!("Next:");
-    println!("  elsewhere render mastodon {}", post.display());
+    println!("- mastodon");
+    println!("- bluesky");
+    println!("- substack");
 
     Ok(())
 }
 
-fn render(_target: RenderTarget, post: PathBuf) -> Result<()> {
+fn render(target: RenderTarget, post: PathBuf) -> Result<()> {
     ensure_post_exists(&post)?;
-    println!("Unimplemented");
 
-    Ok(())
+    anyhow::bail!(ElsewhereError::RendererNotImplemented {
+        target: target.to_string(),
+    });
+}
+
+fn read_generic_markdown_post(path: &Path) -> Result<CanonicalPost> {
+    let source = GenericMarkdownSource;
+    source.read_post(path)
 }
 
 fn ensure_post_exists(path: &Path) -> Result<()> {
