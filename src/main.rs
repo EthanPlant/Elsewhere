@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 use crate::cli::{Cli, Commands, RenderTarget};
-use crate::config::Config;
+use crate::config::{Config, load_config};
 use crate::error::ElsewhereError;
 use crate::post::CanonicalPost;
 use crate::sources::Source;
@@ -50,7 +50,9 @@ fn init(force: bool) -> Result<()> {
 fn plan(post: PathBuf) -> Result<()> {
     ensure_post_exists(&post)?;
 
-    let post = read_generic_markdown_post(&post)?;
+    let loaded_config = load_config()?;
+
+    let post = read_post_with_canonical_url(&loaded_config.config, &loaded_config.root_dir, &post)?;
 
     println!("Post");
     println!("Title: {}", post.title);
@@ -81,14 +83,29 @@ fn plan(post: PathBuf) -> Result<()> {
 fn render(target: RenderTarget, post: PathBuf) -> Result<()> {
     ensure_post_exists(&post)?;
 
+    let loaded_config = load_config()?;
+
+    let _post =
+        read_post_with_canonical_url(&loaded_config.config, &loaded_config.root_dir, &post)?;
+
     anyhow::bail!(ElsewhereError::RendererNotImplemented {
         target: target.to_string(),
     });
 }
 
-fn read_generic_markdown_post(path: &Path) -> Result<CanonicalPost> {
+fn read_post_with_canonical_url(
+    config: &Config,
+    site_root: &Path,
+    post_path: &Path,
+) -> Result<CanonicalPost> {
     let source = GenericMarkdownSource;
-    source.read_post(path)
+    let mut post = source.read_post(post_path)?;
+
+    if post.canonical_url.is_none() {
+        post.canonical_url = config.derive_canonical_url(site_root, post_path, &post);
+    }
+
+    Ok(post)
 }
 
 fn ensure_post_exists(path: &Path) -> Result<()> {

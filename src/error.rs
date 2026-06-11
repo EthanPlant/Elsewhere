@@ -10,6 +10,9 @@ pub enum ElsewhereError {
     #[error("configuration file already exists: {0} (use --force to overwrite)")]
     ConfigExists(PathBuf),
 
+    #[error("configuration file not found: run `elsewhere init` from your site root")]
+    ConfigNotFound,
+
     #[error("Markdown file is missing front matter; expected TOML front matter delimited by +++")]
     MissingFrontMatter,
 
