@@ -16,7 +16,9 @@ mod config;
 mod error;
 mod frontmatter;
 mod post;
+mod renderers;
 mod sources;
+mod templates;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -85,12 +87,30 @@ fn render(target: RenderTarget, post: PathBuf) -> Result<()> {
 
     let loaded_config = load_config()?;
 
-    let _post =
-        read_post_with_canonical_url(&loaded_config.config, &loaded_config.root_dir, &post)?;
+    let post = read_post_with_canonical_url(&loaded_config.config, &loaded_config.root_dir, &post)?;
 
-    anyhow::bail!(ElsewhereError::RendererNotImplemented {
-        target: target.to_string(),
-    });
+    let rendered = renderers::render(&target, &post, &loaded_config.config)?;
+
+    match rendered.max_chars {
+        Some(max_chars) => {
+            eprintln!(
+                "{} render: {} / {max_chars} characters",
+                rendered.target, rendered.char_count
+            );
+        }
+        None => eprintln!(
+            "{} render {} characters",
+            rendered.target, rendered.char_count
+        ),
+    }
+
+    for warning in rendered.warnings {
+        eprintln!("{warning}");
+    }
+
+    println!("{}", rendered.body);
+
+    Ok(())
 }
 
 fn read_post_with_canonical_url(

@@ -17,10 +17,15 @@ pub struct Config {
     pub content_dir: String,
     pub source: SourceKind,
     pub defaults: Defaults,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generic: Option<GenericConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub zola: Option<ZolaConfig>,
+
+    pub mastodon: SocialRendererConfig,
+    pub bluesky: SocialRendererConfig,
+    pub substack: SubstackRendererConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +53,53 @@ pub struct ZolaConfig {
     pub section_url_from_path: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SocialRendererConfig {
+    pub max_chars: usize,
+    pub template: String,
+}
+
+impl SocialRendererConfig {
+    pub fn mastodon_default() -> Self {
+        Self {
+            max_chars: 500,
+            template: "{first_paragraph}\n\nNew essay: {title}\n{url}".to_string(),
+        }
+    }
+
+    pub fn bluesky_default() -> Self {
+        Self {
+            max_chars: 300,
+            template: "New essay: {title}\n\n{description}\n\n{url}".to_string(),
+        }
+    }
+}
+
+impl Default for SocialRendererConfig {
+    fn default() -> Self {
+        Self {
+            max_chars: 500,
+            template: "{first_paragraph}\n\nNew essay: {title}\n{url}".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct SubstackRendererConfig {
+    pub template: String,
+}
+
+impl Default for SubstackRendererConfig {
+    fn default() -> Self {
+        Self {
+            template: "# {title}\n\n_{description}_\n\n{body}\n\n{canonical_phrase}\n{url}"
+                .to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct LoadedConfig {
     pub config: Config,
@@ -63,8 +115,13 @@ impl Config {
             defaults: Defaults {
                 canonical_phrase: "Originally published on my website:".to_string(),
             },
+
             generic: Some(GenericConfig::default()),
             zola: None,
+
+            mastodon: SocialRendererConfig::mastodon_default(),
+            bluesky: SocialRendererConfig::bluesky_default(),
+            substack: SubstackRendererConfig::default(),
         }
     }
 

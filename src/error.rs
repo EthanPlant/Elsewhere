@@ -37,6 +37,12 @@ pub enum ElsewhereError {
         expected: &'static str,
     },
 
-    #[error("{target} rendering is not implemented yet")]
-    RendererNotImplemented { target: String },
+    #[error("template variable {{{variable}}} is not available for this post")]
+    MissingTemplateValue { variable: String },
+
+    #[error("unknown template variable {{{variable}}}")]
+    UnknownTemplateVariable { variable: String },
+
+    #[error("template contains an unclosed variable; expected `}}`")]
+    UnclosedTemplateVariable,
 }
