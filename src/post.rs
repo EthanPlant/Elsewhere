@@ -9,6 +9,11 @@ pub struct CanonicalPost {
     pub body_markdown: String,
     pub first_paragraph: Option<String>,
     pub slug: Option<String>,
+
+    // Zola/font-matter page metadata
+    pub path: Option<String>,
+    pub draft: bool,
+    pub aliases: Vec<String>,
 }
 
 impl CanonicalPost {

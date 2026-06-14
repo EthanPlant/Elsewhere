@@ -16,7 +16,7 @@ pub struct RenderedPost {
 }
 
 impl RenderedPost {
-    pub fn new(target: RenderTarget, body: String, max_chars: Option<usize>) -> Self {
+    pub fn new(target: RenderTarget, body: String, max_chars: Option<usize>, draft: bool) -> Self {
         let char_count = body.chars().count();
         let mut warnings = Vec::new();
 
@@ -27,6 +27,9 @@ impl RenderedPost {
                     target, char_count, max_chars
                 ));
             }
+        }
+        if draft {
+            warnings.push(format!("Warning: Post is marked as draft"));
         }
 
         Self {

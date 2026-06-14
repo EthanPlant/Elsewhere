@@ -12,5 +12,6 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
         RenderTarget::Bluesky,
         body,
         Some(config.mastodon.max_chars),
+        post.draft,
     ))
 }

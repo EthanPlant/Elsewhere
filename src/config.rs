@@ -13,7 +13,8 @@ pub const CONFIG_FILE_NAME: &str = "elsewhere.toml";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
-    pub site_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub site_url: Option<String>,
     pub content_dir: String,
     pub source: SourceKind,
     pub defaults: Defaults,
@@ -109,7 +110,7 @@ pub struct LoadedConfig {
 impl Config {
     pub fn starter() -> Self {
         Self {
-            site_url: "https://example.com".to_string(),
+            site_url: Some("https://example.com".to_string()),
             content_dir: "content".to_string(),
             source: SourceKind::Generic,
             defaults: Defaults {
@@ -135,6 +136,7 @@ impl Config {
 
     pub fn derive_canonical_url(
         &self,
+        site_url: &str,
         site_root: &Path,
         post_path: &Path,
         post: &CanonicalPost,
@@ -144,30 +146,35 @@ impl Config {
         }
 
         match self.source {
-            SourceKind::Generic => self.derive_generic_url(post),
-            SourceKind::Zola => self.derive_zola_url(site_root, post_path, post),
+            SourceKind::Generic => self.derive_generic_url(site_url, post),
+            SourceKind::Zola => self.derive_zola_url(site_url, site_root, post_path, post),
         }
     }
 
-    fn derive_generic_url(&self, post: &CanonicalPost) -> Option<String> {
+    fn derive_generic_url(&self, site_url: &str, post: &CanonicalPost) -> Option<String> {
         let slug = post.slug.as_deref()?;
         let generic_config = self.generic_config();
 
         let path = generic_config.url_pattern.replace("{slug}", slug);
 
-        Some(join_site_url(&self.site_url, &path))
+        Some(join_site_url(site_url, &path))
     }
 
     fn derive_zola_url(
         &self,
+        site_url: &str,
         site_root: &Path,
         post_path: &Path,
         post: &CanonicalPost,
     ) -> Option<String> {
         let zola_config = self.zola_config();
 
+        if let Some(path) = &post.path {
+            return Some(join_site_url(site_url, path));
+        }
+
         if !zola_config.section_url_from_path {
-            return self.derive_generic_url(post);
+            return self.derive_generic_url(site_url, post);
         }
 
         let content_dir = site_root.join(&self.content_dir);
@@ -180,24 +187,34 @@ impl Config {
             .collect();
 
         let last = parts.pop()?;
-        let slug = post.slug.clone().unwrap_or_else(|| {
-            Path::new(&last)
-                .file_stem()
-                .and_then(|stem| stem.to_str())
-                .unwrap_or(&last)
-                .to_string()
-        });
+        let filename_slug = Path::new(&last)
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or(&last)
+            .to_string();
+
+        let slug = post.slug.clone().unwrap_or(filename_slug);
 
         parts.push(slug);
 
         let path = format!("/{}/", parts.join("/"));
-        Some(join_site_url(&self.site_url, &path))
+        Some(join_site_url(site_url, &path))
     }
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self::starter()
+        Self {
+            site_url: None,
+            content_dir: "content".to_string(),
+            source: SourceKind::Generic,
+            defaults: Defaults::default(),
+            generic: None,
+            zola: None,
+            mastodon: SocialRendererConfig::mastodon_default(),
+            bluesky: SocialRendererConfig::bluesky_default(),
+            substack: SubstackRendererConfig::default(),
+        }
     }
 }
 
@@ -225,8 +242,21 @@ impl Default for ZolaConfig {
     }
 }
 
-pub fn load_config() -> Result<LoadedConfig> {
-    let start_dir = env::current_dir().context("failed to determine current directory")?;
+pub fn load_config_for_post(post_path: &Path) -> Result<LoadedConfig> {
+    let start_dir = if post_path.is_absolute() {
+        post_path
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("post path has no parent directory"))?
+            .to_path_buf()
+    } else {
+        env::current_dir()
+            .context("failed to determine current directory")?
+            .join(post_path)
+            .parent()
+            .ok_or_else(|| anyhow::anyhow!("post path has no parent directory"))?
+            .to_path_buf()
+    };
+
     let path = find_config_file(&start_dir).ok_or(ElsewhereError::ConfigNotFound)?;
 
     let raw = fs::read_to_string(&path)
@@ -242,7 +272,6 @@ pub fn load_config() -> Result<LoadedConfig> {
 
     Ok(LoadedConfig { config, root_dir })
 }
-
 fn find_config_file(start_dir: &Path) -> Option<PathBuf> {
     let mut current = Some(start_dir);
 

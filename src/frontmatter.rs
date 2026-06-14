@@ -16,6 +16,9 @@ pub struct ParsedFrontMatter {
     pub tags: Vec<String>,
     pub canonical_url: Option<String>,
     pub slug: Option<String>,
+    pub path: Option<String>,
+    pub draft: bool,
+    pub aliases: Vec<String>,
 }
 
 pub fn parse_markdown(input: &str) -> Result<ParsedMarkdown> {
@@ -76,6 +79,9 @@ fn parse_toml_frontmatter(input: &str) -> Result<ParsedFrontMatter> {
         tags: optional_string_array(table, "tags")?,
         canonical_url: optional_string(table, "canonical_url")?,
         slug: optional_string(table, "slug")?,
+        path: optional_string(table, "path")?,
+        draft: optional_bool(table, "draft")?.unwrap_or(false),
+        aliases: optional_string_array(table, "aliases")?,
     })
 }
 
@@ -109,6 +115,22 @@ fn optional_string(table: &toml::Table, field: &'static str) -> Result<Option<St
     };
 
     Ok(Some(value.to_string()))
+}
+
+fn optional_bool(table: &toml::Table, field: &'static str) -> Result<Option<bool>> {
+    let Some(value) = table.get(field) else {
+        return Ok(None);
+    };
+
+    let Some(value) = value.as_bool() else {
+        return Err(ElsewhereError::InvalidFrontMatterField {
+            field,
+            expected: "a boolean",
+        }
+        .into());
+    };
+
+    Ok(Some(value))
 }
 
 fn optional_string_or_datetime(table: &toml::Table, field: &'static str) -> Result<Option<String>> {

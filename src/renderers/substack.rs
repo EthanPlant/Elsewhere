@@ -8,5 +8,10 @@ use crate::{
 pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
     let body = render_template(&config.substack.template, post, config)?;
 
-    Ok(RenderedPost::new(RenderTarget::Substack, body, None))
+    Ok(RenderedPost::new(
+        RenderTarget::Substack,
+        body,
+        None,
+        post.draft,
+    ))
 }

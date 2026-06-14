@@ -5,11 +5,12 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 use crate::cli::{Cli, Commands, RenderTarget};
-use crate::config::{Config, load_config};
+use crate::config::{Config, LoadedConfig, SourceKind, load_config_for_post};
 use crate::error::ElsewhereError;
 use crate::post::CanonicalPost;
 use crate::sources::Source;
-use crate::sources::generic_markdown::GenericMarkdownSource;
+use crate::sources::generic::GenericSource;
+use crate::sources::zola::ZolaSource;
 
 mod cli;
 mod config;
@@ -52,9 +53,9 @@ fn init(force: bool) -> Result<()> {
 fn plan(post: PathBuf) -> Result<()> {
     ensure_post_exists(&post)?;
 
-    let loaded_config = load_config()?;
+    let loaded_config = load_config_for_post(&post)?;
 
-    let post = read_post_with_canonical_url(&loaded_config.config, &loaded_config.root_dir, &post)?;
+    let post = read_post_with_canonical_url(&loaded_config, &loaded_config.root_dir, &post)?;
 
     println!("Post");
     println!("Title: {}", post.title);
@@ -73,6 +74,10 @@ fn plan(post: PathBuf) -> Result<()> {
         println!("Tags: {}", post.tags.join(", "));
     }
 
+    if post.draft {
+        println!("Warning: this post is marked as draft.");
+    }
+
     println!();
     println!("Available renders:");
     println!("- mastodon");
@@ -85,9 +90,9 @@ fn plan(post: PathBuf) -> Result<()> {
 fn render(target: RenderTarget, post: PathBuf) -> Result<()> {
     ensure_post_exists(&post)?;
 
-    let loaded_config = load_config()?;
+    let loaded_config = load_config_for_post(&post)?;
 
-    let post = read_post_with_canonical_url(&loaded_config.config, &loaded_config.root_dir, &post)?;
+    let post = read_post_with_canonical_url(&loaded_config, &loaded_config.root_dir, &post)?;
 
     let rendered = renderers::render(&target, &post, &loaded_config.config)?;
 
@@ -114,18 +119,56 @@ fn render(target: RenderTarget, post: PathBuf) -> Result<()> {
 }
 
 fn read_post_with_canonical_url(
-    config: &Config,
+    loaded_config: &LoadedConfig,
     site_root: &Path,
     post_path: &Path,
 ) -> Result<CanonicalPost> {
-    let source = GenericMarkdownSource;
-    let mut post = source.read_post(post_path)?;
+    let site_url = effective_site_url(loaded_config)?;
+    let resolved_post_path = resolve_post_path(&loaded_config.root_dir, post_path);
+    let mut post = match loaded_config.config.source {
+        SourceKind::Generic => {
+            let source = GenericSource;
+            source.read_post(&resolved_post_path)?
+        }
+        SourceKind::Zola => {
+            let source = ZolaSource::new(loaded_config.root_dir.clone());
+            source.read_post(&resolved_post_path)?
+        }
+    };
 
     if post.canonical_url.is_none() {
-        post.canonical_url = config.derive_canonical_url(site_root, post_path, &post);
+        post.canonical_url = loaded_config.config.derive_canonical_url(
+            &site_url,
+            site_root,
+            &resolved_post_path,
+            &post,
+        );
     }
 
     Ok(post)
+}
+
+fn effective_site_url(loaded_config: &LoadedConfig) -> Result<String> {
+    if let Some(site_url) = loaded_config.config.site_url.clone() {
+        return Ok(site_url);
+    }
+
+    match loaded_config.config.source {
+        SourceKind::Zola => {
+            let source = ZolaSource::new(loaded_config.root_dir.clone());
+            let zola_config = source.read_config()?;
+            Ok(zola_config.base_url)
+        }
+        SourceKind::Generic => Err(ElsewhereError::SiteUrlNotConfigured.into()),
+    }
+}
+
+fn resolve_post_path(site_root: &Path, post_path: &Path) -> PathBuf {
+    if post_path.is_absolute() {
+        post_path.to_path_buf()
+    } else {
+        site_root.join(post_path)
+    }
 }
 
 fn ensure_post_exists(path: &Path) -> Result<()> {

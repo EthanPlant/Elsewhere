@@ -45,4 +45,9 @@ pub enum ElsewhereError {
 
     #[error("template contains an unclosed variable; expected `}}`")]
     UnclosedTemplateVariable,
+
+    #[error(
+        "site URL is not configured; set `site_url` in elsewhere.toml or use source = \"zola\" with a Zola config.toml containing base_url"
+    )]
+    SiteUrlNotConfigured,
 }
