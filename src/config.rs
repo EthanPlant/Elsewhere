@@ -24,9 +24,12 @@ pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub zola: Option<ZolaConfig>,
 
-    pub mastodon: SocialRendererConfig,
-    pub bluesky: SocialRendererConfig,
-    pub substack: SubstackRendererConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mastodon: Option<SocialRendererConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bluesky: Option<SocialRendererConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub substack: Option<SubstackRendererConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,36 +57,11 @@ pub struct ZolaConfig {
     pub section_url_from_path: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct SocialRendererConfig {
     pub max_chars: usize,
     pub template: String,
-}
-
-impl SocialRendererConfig {
-    pub fn mastodon_default() -> Self {
-        Self {
-            max_chars: 500,
-            template: "{first_paragraph}\n\nNew essay: {title}\n{url}".to_string(),
-        }
-    }
-
-    pub fn bluesky_default() -> Self {
-        Self {
-            max_chars: 300,
-            template: "New essay: {title}\n\n{description}\n\n{url}".to_string(),
-        }
-    }
-}
-
-impl Default for SocialRendererConfig {
-    fn default() -> Self {
-        Self {
-            max_chars: 500,
-            template: "{first_paragraph}\n\nNew essay: {title}\n{url}".to_string(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,9 +98,9 @@ impl Config {
             generic: Some(GenericConfig::default()),
             zola: None,
 
-            mastodon: SocialRendererConfig::mastodon_default(),
-            bluesky: SocialRendererConfig::bluesky_default(),
-            substack: SubstackRendererConfig::default(),
+            mastodon: None,
+            bluesky: None,
+            substack: None,
         }
     }
 
@@ -211,9 +189,9 @@ impl Default for Config {
             defaults: Defaults::default(),
             generic: None,
             zola: None,
-            mastodon: SocialRendererConfig::mastodon_default(),
-            bluesky: SocialRendererConfig::bluesky_default(),
-            substack: SubstackRendererConfig::default(),
+            mastodon: None,
+            bluesky: None,
+            substack: None,
         }
     }
 }

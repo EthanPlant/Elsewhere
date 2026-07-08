@@ -74,6 +74,8 @@ fn resolve_variable(variable: &str, post: &CanonicalPost, config: &Config) -> Re
         "body" | "body_markdown" => Ok(post.body_markdown.clone()),
         "canonical_phrase" => Ok(config.defaults.canonical_phrase.clone()),
 
+        "excerpt" => Ok(post.editorial_excerpt()),
+
         _ => Err(ElsewhereError::UnknownTemplateVariable {
             variable: variable.to_string(),
         }

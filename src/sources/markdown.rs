@@ -30,6 +30,7 @@ pub fn read_markdown_post(path: &Path) -> Result<CanonicalPost> {
         path: frontmatter.path,
         draft: frontmatter.draft,
         aliases: frontmatter.aliases,
+        elsewhere: frontmatter.elsewhere,
     })
 }
 

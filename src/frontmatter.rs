@@ -1,6 +1,9 @@
 use anyhow::Result;
 
-use crate::error::ElsewhereError;
+use crate::{
+    error::ElsewhereError,
+    post::{ElsewhereFrontMatter, ElsewhereTargetOverride},
+};
 
 #[derive(Debug, Clone)]
 pub struct ParsedMarkdown {
@@ -19,6 +22,7 @@ pub struct ParsedFrontMatter {
     pub path: Option<String>,
     pub draft: bool,
     pub aliases: Vec<String>,
+    pub elsewhere: Option<ElsewhereFrontMatter>,
 }
 
 pub fn parse_markdown(input: &str) -> Result<ParsedMarkdown> {
@@ -82,6 +86,7 @@ fn parse_toml_frontmatter(input: &str) -> Result<ParsedFrontMatter> {
         path: optional_string(table, "path")?,
         draft: optional_bool(table, "draft")?.unwrap_or(false),
         aliases: optional_string_array(table, "aliases")?,
+        elsewhere: optional_elsewhere_frontmatter(table)?,
     })
 }
 
@@ -181,4 +186,73 @@ fn optional_string_array(table: &toml::Table, field: &'static str) -> Result<Vec
     }
 
     Ok(values)
+}
+
+fn optional_elsewhere_frontmatter(table: &toml::Table) -> Result<Option<ElsewhereFrontMatter>> {
+    let direct = optional_elsewhere_table(table.get("elsewhere"), "elsewhere")?;
+    let zola_extra = optional_zola_elsewhere_table(table)?;
+
+    // Prefer Zola-native metadata if both are present.
+    Ok(zola_extra.or(direct))
+}
+
+fn optional_zola_elsewhere_table(table: &toml::Table) -> Result<Option<ElsewhereFrontMatter>> {
+    let Some(extra) = table.get("extra") else {
+        return Ok(None);
+    };
+
+    let Some(extra_table) = extra.as_table() else {
+        return Err(ElsewhereError::InvalidFrontMatterField {
+            field: "extra",
+            expected: "a table",
+        }
+        .into());
+    };
+
+    optional_elsewhere_table(extra_table.get("elsewhere"), "extra.elsewhere")
+}
+
+fn optional_elsewhere_table(
+    value: Option<&toml::Value>,
+    field: &'static str,
+) -> Result<Option<ElsewhereFrontMatter>> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+
+    let Some(table) = value.as_table() else {
+        return Err(ElsewhereError::InvalidFrontMatterField {
+            field,
+            expected: "a table",
+        }
+        .into());
+    };
+
+    Ok(Some(ElsewhereFrontMatter {
+        excerpt: optional_string(table, "excerpt")?,
+        mastodon: optional_elsewhere_target(table, "mastodon")?,
+        bluesky: optional_elsewhere_target(table, "bluesky")?,
+        substack: optional_elsewhere_target(table, "substack")?,
+    }))
+}
+
+fn optional_elsewhere_target(
+    table: &toml::Table,
+    key: &'static str,
+) -> Result<Option<ElsewhereTargetOverride>> {
+    let Some(value) = table.get(key) else {
+        return Ok(None);
+    };
+
+    let Some(target_table) = value.as_table() else {
+        return Err(ElsewhereError::InvalidFrontMatterField {
+            field: key,
+            expected: "a table",
+        }
+        .into());
+    };
+
+    Ok(Some(ElsewhereTargetOverride {
+        template: optional_string(target_table, "template")?,
+    }))
 }
