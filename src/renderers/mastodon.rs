@@ -1,31 +1,37 @@
 use anyhow::Result;
 
 use crate::{
-    cli::RenderTarget, config::Config, post::CanonicalPost, renderers::RenderedPost,
+    config::Config,
+    post::CanonicalPost,
+    renderers::{RenderedPost, choose_template},
+    target::RenderTarget,
     templates::render_template,
 };
 
-const DEFAULT_MASTODON_TEMPLATE: &str = r#"{excerpt}
+const DEFAULT_TEMPLATE: &str = r#"{excerpt}
 
 New essay: {title}
 {url}
-"#;
 
-const DEFAULT_MASTODON_MAX_CHARS: usize = 500;
+{hashtags}"#;
+
+const DEFAULT_MAX_CHARS: usize = 500;
 
 pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
     let renderer_config = config.mastodon.as_ref();
 
-    let template = post
-        .template_override_for("mastodon")
-        .or_else(|| renderer_config.and_then(|config| Some(config.template.as_str())))
-        .unwrap_or(DEFAULT_MASTODON_TEMPLATE);
+    let template = choose_template(
+        post,
+        RenderTarget::Mastodon,
+        renderer_config.map(|config| config.template.as_str()),
+        DEFAULT_TEMPLATE,
+    );
 
     let max_chars = renderer_config
-        .and_then(|config| Some(config.max_chars))
-        .unwrap_or(DEFAULT_MASTODON_MAX_CHARS);
+        .map(|config| config.max_chars)
+        .unwrap_or(DEFAULT_MAX_CHARS);
 
-    let body = render_template(&template, post, config)?;
+    let body = render_template(template, post, config)?;
 
     Ok(RenderedPost::new(
         RenderTarget::Mastodon,

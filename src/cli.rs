@@ -1,6 +1,8 @@
-use std::{fmt, path::PathBuf};
+use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum};
+
+use crate::target::RenderTarget;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -22,36 +24,38 @@ pub enum Commands {
         #[arg(short, long)]
         force: bool,
     },
+
     /// Show what Elsewhere would render for a post.
     Plan {
-        /// path to a Markdown post.
+        /// Path to a Markdown post.
         post: PathBuf,
     },
-    ///Render a post for a specific target.
+
+    /// Render a post for a specific target.
     Render {
         /// Target platform or format.
-        target: RenderTarget,
+        target: RenderTargetArg,
 
-        /// Path to a markdown post.
+        /// Path to a Markdown post.
         post: PathBuf,
     },
 }
 
 #[derive(Debug, Clone, ValueEnum)]
-pub enum RenderTarget {
+pub enum RenderTargetArg {
     Mastodon,
     Bluesky,
     Substack,
+    All,
 }
 
-impl fmt::Display for RenderTarget {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let value = match self {
-            Self::Mastodon => "mastodon",
-            Self::Bluesky => "bluesky",
-            Self::Substack => "substack",
-        };
-
-        write!(f, "{value}")
+impl RenderTargetArg {
+    pub fn as_single_target(&self) -> Option<RenderTarget> {
+        match self {
+            Self::Mastodon => Some(RenderTarget::Mastodon),
+            Self::Bluesky => Some(RenderTarget::Bluesky),
+            Self::Substack => Some(RenderTarget::Substack),
+            Self::All => None,
+        }
     }
 }

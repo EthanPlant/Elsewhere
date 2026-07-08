@@ -21,7 +21,6 @@ pub struct ParsedFrontMatter {
     pub slug: Option<String>,
     pub path: Option<String>,
     pub draft: bool,
-    pub aliases: Vec<String>,
     pub elsewhere: Option<ElsewhereFrontMatter>,
 }
 
@@ -85,7 +84,6 @@ fn parse_toml_frontmatter(input: &str) -> Result<ParsedFrontMatter> {
         slug: optional_string(table, "slug")?,
         path: optional_string(table, "path")?,
         draft: optional_bool(table, "draft")?.unwrap_or(false),
-        aliases: optional_string_array(table, "aliases")?,
         elsewhere: optional_elsewhere_frontmatter(table)?,
     })
 }

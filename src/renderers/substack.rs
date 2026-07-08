@@ -1,11 +1,14 @@
 use anyhow::Result;
 
 use crate::{
-    cli::RenderTarget, config::Config, post::CanonicalPost, renderers::RenderedPost,
+    config::Config,
+    post::CanonicalPost,
+    renderers::{RenderedPost, choose_template},
+    target::RenderTarget,
     templates::render_template,
 };
 
-const DEFAULT_SUBSTACK_TEMPLATE: &str = r#"# {title}
+const DEFAULT_TEMPLATE: &str = r#"# {title}
 
 _{description}_
 
@@ -17,12 +20,14 @@ _{description}_
 pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
     let renderer_config = config.substack.as_ref();
 
-    let template = post
-        .template_override_for("substack")
-        .or_else(|| renderer_config.and_then(|config| Some(config.template.as_str())))
-        .unwrap_or(DEFAULT_SUBSTACK_TEMPLATE);
+    let template = choose_template(
+        post,
+        RenderTarget::Substack,
+        renderer_config.map(|config| config.template.as_str()),
+        DEFAULT_TEMPLATE,
+    );
 
-    let body = render_template(&template, post, config)?;
+    let body = render_template(template, post, config)?;
 
     Ok(RenderedPost::new(
         RenderTarget::Substack,

@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::{cli::RenderTarget, config::Config, post::CanonicalPost};
+use crate::{config::Config, post::CanonicalPost, target::RenderTarget};
 
 mod bluesky;
 mod mastodon;
@@ -28,8 +28,9 @@ impl RenderedPost {
                 ));
             }
         }
+
         if draft {
-            warnings.push(format!("Warning: Post is marked as draft"));
+            warnings.push("Warning: post is marked as draft.".to_string());
         }
 
         Self {
@@ -42,14 +43,21 @@ impl RenderedPost {
     }
 }
 
-pub fn render(
-    target: &RenderTarget,
-    post: &CanonicalPost,
-    config: &Config,
-) -> Result<RenderedPost> {
+pub fn render(target: RenderTarget, post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
     match target {
-        RenderTarget::Bluesky => bluesky::render(post, config),
         RenderTarget::Mastodon => mastodon::render(post, config),
+        RenderTarget::Bluesky => bluesky::render(post, config),
         RenderTarget::Substack => substack::render(post, config),
     }
+}
+
+fn choose_template<'a>(
+    post: &'a CanonicalPost,
+    target: RenderTarget,
+    configured_template: Option<&'a str>,
+    default_template: &'a str,
+) -> &'a str {
+    post.template_override_for(target.name())
+        .or(configured_template)
+        .unwrap_or(default_template)
 }
