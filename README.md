@@ -147,6 +147,6 @@ Later:
 - consider direct publishing only after the rendering workflow is solid
 
 ## License
-Elswhere is published under the GNU General Public License, version 3 or later.
+Elsewhere is published under the GNU General Public License, version 3 or later.
 
 See LICENSE for details.
