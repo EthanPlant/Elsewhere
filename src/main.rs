@@ -8,6 +8,7 @@ mod cli;
 mod config;
 mod error;
 mod frontmatter;
+mod plan;
 mod post;
 mod renderers;
 mod sources;

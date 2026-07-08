@@ -29,6 +29,10 @@ pub enum Commands {
     Plan {
         /// Path to a Markdown post.
         post: PathBuf,
+
+        /// Emit machine-readable JSON
+        #[arg(short, long)]
+        json: bool,
     },
 
     /// Render a post for a specific target.
