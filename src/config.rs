@@ -29,7 +29,7 @@ pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bluesky: Option<SocialRendererConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub substack: Option<SubstackRendererConfig>,
+    pub markdown: Option<LongFormRendererConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,11 +66,11 @@ pub struct SocialRendererConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
-pub struct SubstackRendererConfig {
+pub struct LongFormRendererConfig {
     pub template: String,
 }
 
-impl Default for SubstackRendererConfig {
+impl Default for LongFormRendererConfig {
     fn default() -> Self {
         Self {
             template: "# {title}\n\n_{description}_\n\n{body}\n\n{canonical_phrase}\n{url}"
@@ -100,7 +100,7 @@ impl Config {
 
             mastodon: None,
             bluesky: None,
-            substack: None,
+            markdown: None,
         }
     }
 
@@ -191,7 +191,7 @@ impl Default for Config {
             zola: None,
             mastodon: None,
             bluesky: None,
-            substack: None,
+            markdown: None,
         }
     }
 }

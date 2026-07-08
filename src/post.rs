@@ -48,7 +48,7 @@ pub struct ElsewhereFrontMatter {
     pub excerpt: Option<String>,
     pub mastodon: Option<ElsewhereTargetOverride>,
     pub bluesky: Option<ElsewhereTargetOverride>,
-    pub substack: Option<ElsewhereTargetOverride>,
+    pub markdown: Option<ElsewhereTargetOverride>,
 }
 
 impl ElsewhereFrontMatter {
@@ -56,7 +56,7 @@ impl ElsewhereFrontMatter {
         match target {
             "mastodon" => self.mastodon.as_ref(),
             "bluesky" => self.bluesky.as_ref(),
-            "substack" => self.substack.as_ref(),
+            "markdown" => self.markdown.as_ref(),
             _ => None,
         }
     }

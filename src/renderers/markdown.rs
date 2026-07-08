@@ -18,11 +18,11 @@ _{description}_
 {url}"#;
 
 pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
-    let renderer_config = config.substack.as_ref();
+    let renderer_config = config.markdown.as_ref();
 
     let template = choose_template(
         post,
-        RenderTarget::Substack,
+        RenderTarget::Markdown,
         renderer_config.map(|config| config.template.as_str()),
         DEFAULT_TEMPLATE,
     );
@@ -30,7 +30,7 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
     let body = render_template(template, post, config)?;
 
     Ok(RenderedPost::new(
-        RenderTarget::Substack,
+        RenderTarget::Markdown,
         body,
         None,
         post.draft,

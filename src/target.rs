@@ -9,19 +9,19 @@ use serde::Serialize;
 pub enum RenderTarget {
     Mastodon,
     Bluesky,
-    Substack,
+    Markdown,
 }
 
 impl RenderTarget {
     pub fn all() -> &'static [RenderTarget] {
-        &[Self::Mastodon, Self::Bluesky, Self::Substack]
+        &[Self::Mastodon, Self::Bluesky, Self::Markdown]
     }
 
     pub fn name(self) -> &'static str {
         match self {
             Self::Mastodon => "mastodon",
             Self::Bluesky => "bluesky",
-            Self::Substack => "substack",
+            Self::Markdown => "markdown",
         }
     }
 
@@ -29,12 +29,12 @@ impl RenderTarget {
         match self {
             Self::Mastodon => "Mastodon",
             Self::Bluesky => "Bluesky",
-            Self::Substack => "Substack",
+            Self::Markdown => "Markdown",
         }
     }
 
     pub fn is_long_form(self) -> bool {
-        matches!(self, Self::Substack)
+        matches!(self, Self::Markdown)
     }
 }
 

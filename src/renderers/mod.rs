@@ -3,8 +3,8 @@ use anyhow::Result;
 use crate::{config::Config, post::CanonicalPost, target::RenderTarget};
 
 mod bluesky;
+mod markdown;
 mod mastodon;
-mod substack;
 
 #[derive(Debug, Clone)]
 pub struct RenderedPost {
@@ -47,7 +47,7 @@ pub fn render(target: RenderTarget, post: &CanonicalPost, config: &Config) -> Re
     match target {
         RenderTarget::Mastodon => mastodon::render(post, config),
         RenderTarget::Bluesky => bluesky::render(post, config),
-        RenderTarget::Substack => substack::render(post, config),
+        RenderTarget::Markdown => markdown::render(post, config),
     }
 }
 

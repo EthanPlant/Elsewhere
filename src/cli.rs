@@ -49,7 +49,7 @@ pub enum Commands {
 pub enum RenderTargetArg {
     Mastodon,
     Bluesky,
-    Substack,
+    Markdown,
     All,
 }
 
@@ -58,7 +58,7 @@ impl RenderTargetArg {
         match self {
             Self::Mastodon => Some(RenderTarget::Mastodon),
             Self::Bluesky => Some(RenderTarget::Bluesky),
-            Self::Substack => Some(RenderTarget::Substack),
+            Self::Markdown => Some(RenderTarget::Markdown),
             Self::All => None,
         }
     }

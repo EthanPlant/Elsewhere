@@ -230,7 +230,7 @@ fn optional_elsewhere_table(
         excerpt: optional_string(table, "excerpt")?,
         mastodon: optional_elsewhere_target(table, "mastodon")?,
         bluesky: optional_elsewhere_target(table, "bluesky")?,
-        substack: optional_elsewhere_target(table, "substack")?,
+        markdown: optional_elsewhere_target(table, "markdown")?,
     }))
 }
 
