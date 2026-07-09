@@ -334,3 +334,72 @@ fn join_site_url(site_url: &str, path: &str) -> String {
 
     format!("{site_url}/{path}")
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+    use crate::post::CanonicalPost;
+
+    #[test]
+    fn derives_zola_url_from_content_path() {
+        let config = Config {
+            source: SourceKind::Zola,
+            zola: Some(ZolaConfig {
+                section_url_from_path: true,
+            }),
+            ..Config::default()
+        };
+
+        let site_root = PathBuf::from("/site");
+        let post_path = PathBuf::from("/site/content/writing/test.md");
+
+        let post = test_post("Test Post");
+
+        let url = config
+            .derive_canonical_url("https://example.com", &site_root, &post_path, &post)
+            .unwrap();
+
+        assert_eq!(url, "https://example.com/writing/test/");
+    }
+
+    #[test]
+    fn zola_slug_overrides_filename() {
+        let config = Config {
+            source: SourceKind::Zola,
+            zola: Some(ZolaConfig {
+                section_url_from_path: true,
+            }),
+            ..Config::default()
+        };
+
+        let site_root = PathBuf::from("/site");
+        let post_path = PathBuf::from("/site/content/writing/original.md");
+
+        let mut post = test_post("Example");
+        post.slug = Some("custom-slug".to_string());
+
+        let url = config
+            .derive_canonical_url("https://example.com", &site_root, &post_path, &post)
+            .unwrap();
+
+        assert_eq!(url, "https://example.com/writing/custom-slug/");
+    }
+
+    fn test_post(title: &str) -> CanonicalPost {
+        CanonicalPost {
+            title: title.to_string(),
+            description: None,
+            date: None,
+            tags: Vec::new(),
+            canonical_url: None,
+            body_markdown: String::new(),
+            first_paragraph: None,
+            slug: None,
+            elsewhere: None,
+            path: None,
+            draft: false,
+        }
+    }
+}

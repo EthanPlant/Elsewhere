@@ -78,3 +78,72 @@ pub struct RedditTargetOverride {
     pub body_template: Option<String>,
     pub comment_template: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracts_first_paragraph_from_markdown() {
+        let markdown = r#"
+
+First paragraph.
+
+Second paragraph.
+"#;
+
+        assert_eq!(
+            CanonicalPost::first_paragraph_from_markdown(markdown).as_deref(),
+            Some("First paragraph.")
+        );
+    }
+
+    #[test]
+    fn editorial_excerpt_prefers_elsewhere_excerpt() {
+        let mut post = test_post("Example");
+        post.description = Some("Description fallback.".to_string());
+        post.first_paragraph = Some("First paragraph fallback.".to_string());
+        post.elsewhere = Some(ElsewhereFrontMatter {
+            excerpt: Some("Custom excerpt.".to_string()),
+            mastodon: None,
+            bluesky: None,
+            markdown: None,
+            reddit: None,
+        });
+
+        assert_eq!(post.editorial_excerpt(), "Custom excerpt.");
+    }
+
+    #[test]
+    fn editorial_excerpt_falls_back_to_description() {
+        let mut post = test_post("Example");
+        post.description = Some("Description fallback.".to_string());
+        post.first_paragraph = Some("First paragraph fallback.".to_string());
+
+        assert_eq!(post.editorial_excerpt(), "Description fallback.");
+    }
+
+    #[test]
+    fn editorial_excerpt_falls_back_to_first_paragraph() {
+        let mut post = test_post("Example");
+        post.first_paragraph = Some("First paragraph fallback.".to_string());
+
+        assert_eq!(post.editorial_excerpt(), "First paragraph fallback.");
+    }
+
+    fn test_post(title: &str) -> CanonicalPost {
+        CanonicalPost {
+            title: title.to_string(),
+            description: None,
+            date: None,
+            tags: Vec::new(),
+            canonical_url: None,
+            body_markdown: String::new(),
+            first_paragraph: None,
+            slug: None,
+            elsewhere: None,
+            path: None,
+            draft: false,
+        }
+    }
+}

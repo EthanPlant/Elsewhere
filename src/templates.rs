@@ -82,3 +82,45 @@ fn resolve_variable(variable: &str, post: &CanonicalPost, config: &Config) -> Re
         .into()),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_post() -> CanonicalPost {
+        CanonicalPost {
+            title: "Example Post".to_string(),
+            description: Some("A small test post.".to_string()),
+            date: Some("2026-06-14".to_string()),
+            tags: vec!["test".to_string()],
+            canonical_url: Some("https://example.com/writing/example/".to_string()),
+            body_markdown: "This is the body.".to_string(),
+            first_paragraph: Some("This is the first paragraph.".to_string()),
+            slug: Some("example".to_string()),
+            elsewhere: None,
+            path: None,
+            draft: false,
+        }
+    }
+
+    #[test]
+    fn replaces_template_variables() {
+        let post = test_post();
+        let config = Config::default();
+
+        let rendered = render_template("{title}\n{excerpt}\n{url}", &post, &config).unwrap();
+
+        assert_eq!(
+            rendered,
+            "Example Post\nA small test post.\nhttps://example.com/writing/example/"
+        );
+    }
+
+    #[test]
+    fn unknown_template_variable_is_an_error() {
+        let post = test_post();
+        let config = Config::default();
+
+        assert!(render_template("{does_not_exist}", &post, &config).is_err());
+    }
+}

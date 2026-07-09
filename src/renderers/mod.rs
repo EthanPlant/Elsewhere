@@ -98,3 +98,90 @@ fn choose_template<'a>(
         .or(configured_template)
         .unwrap_or(default_template)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        config::SocialRendererConfig,
+        post::{ElsewhereFrontMatter, ElsewhereTargetOverride},
+    };
+
+    #[test]
+    fn mastodon_warns_when_over_character_limit() {
+        let config = Config {
+            mastodon: Some(SocialRendererConfig {
+                max_chars: 10,
+                template: "{title}".to_string(),
+            }),
+            ..Config::default()
+        };
+
+        let post = test_post("This title is longer than ten characters");
+
+        let rendered = render(RenderTarget::Mastodon, &post, &config).unwrap();
+
+        assert_eq!(rendered.max_chars, Some(10));
+        assert!(!rendered.warnings.is_empty());
+    }
+
+    #[test]
+    fn bluesky_warns_when_over_character_limit() {
+        let config = Config {
+            bluesky: Some(SocialRendererConfig {
+                max_chars: 10,
+                template: "{title}".to_string(),
+            }),
+            ..Config::default()
+        };
+
+        let post = test_post("This title is longer than ten characters");
+
+        let rendered = render(RenderTarget::Bluesky, &post, &config).unwrap();
+
+        assert_eq!(rendered.max_chars, Some(10));
+        assert!(!rendered.warnings.is_empty());
+    }
+
+    #[test]
+    fn platform_specific_override_wins() {
+        let config = Config {
+            mastodon: Some(SocialRendererConfig {
+                max_chars: 500,
+                template: "Site-level template: {title}".to_string(),
+            }),
+            ..Config::default()
+        };
+
+        let mut post = test_post("Example");
+        post.elsewhere = Some(ElsewhereFrontMatter {
+            excerpt: Some("Custom excerpt.".to_string()),
+            mastodon: Some(ElsewhereTargetOverride {
+                template: Some("Post-level template: {excerpt}".to_string()),
+            }),
+            bluesky: None,
+            markdown: None,
+            reddit: None,
+        });
+
+        let rendered = render(RenderTarget::Mastodon, &post, &config).unwrap();
+
+        assert_eq!(rendered.body, "Post-level template: Custom excerpt.");
+    }
+
+    fn test_post(title: &str) -> CanonicalPost {
+        CanonicalPost {
+            title: title.to_string(),
+            description: Some("Description.".to_string()),
+            date: None,
+            tags: Vec::new(),
+            canonical_url: Some("https://example.com/writing/example/".to_string()),
+            body_markdown: "Body.".to_string(),
+            first_paragraph: Some("First paragraph.".to_string()),
+            slug: Some("example".to_string()),
+            elsewhere: None,
+            path: None,
+            draft: false,
+        }
+    }
+}

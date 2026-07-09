@@ -313,3 +313,100 @@ fn optional_reddit_target(
         comment_template: optional_string(target_table, "comment")?,
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_toml_front_matter() {
+        let input = r#"+++
+title = "Example Post"
+description = "A small test post."
+date = "2026-06-14"
+tags = ["test", "indieweb"]
+slug = "example"
+draft = false
++++
+
+This is the body.
+"#;
+
+        let parsed = parse_markdown(input).unwrap();
+
+        assert_eq!(parsed.frontmatter.title, "Example Post");
+        assert_eq!(
+            parsed.frontmatter.description.as_deref(),
+            Some("A small test post.")
+        );
+        assert_eq!(parsed.frontmatter.date.as_deref(), Some("2026-06-14"));
+        assert_eq!(parsed.frontmatter.tags, vec!["test", "indieweb"]);
+        assert_eq!(parsed.frontmatter.slug.as_deref(), Some("example"));
+        assert!(!parsed.frontmatter.draft);
+        assert_eq!(parsed.body_markdown, "This is the body.");
+    }
+
+    #[test]
+    fn missing_title_is_an_error() {
+        let input = r#"+++
+description = "No title."
++++
+
+This is the body.
+"#;
+
+        assert!(parse_markdown(input).is_err());
+    }
+
+    #[test]
+    fn parses_zola_taxonomy_tags() {
+        let input = r#"+++
+title = "Tagged Post"
+
+[taxonomies]
+tags = ["ai", "platforms", "labour"]
++++
+
+This is the body.
+"#;
+
+        let parsed = parse_markdown(input).unwrap();
+
+        assert_eq!(parsed.frontmatter.tags, vec!["ai", "platforms", "labour"]);
+    }
+
+    #[test]
+    fn parses_platform_specific_override() {
+        let input = r#"+++
+title = "Example"
+
+[extra.elsewhere]
+excerpt = "Custom excerpt."
+
+[extra.elsewhere.mastodon]
+template = """
+Custom Mastodon template.
+
+{excerpt}
+
+{url}
+"""
++++
+
+This is the body.
+"#;
+
+        let parsed = parse_markdown(input).unwrap();
+        let elsewhere = parsed.frontmatter.elsewhere.unwrap();
+
+        assert_eq!(elsewhere.excerpt.as_deref(), Some("Custom excerpt."));
+        assert!(
+            elsewhere
+                .mastodon
+                .unwrap()
+                .template
+                .unwrap()
+                .contains("Custom Mastodon template.")
+        );
+    }
+}
