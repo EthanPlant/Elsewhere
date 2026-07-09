@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 description = "A local POSSE CLI for static-site writers."
+repository = "https://github.com/EthanPlant/Elsewhere"
+readme = "README.md"
+keywords = ["posse", "indieweb", "cli", "markdown", "static-site"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1"
