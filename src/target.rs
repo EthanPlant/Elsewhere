@@ -10,11 +10,12 @@ pub enum RenderTarget {
     Mastodon,
     Bluesky,
     Markdown,
+    Reddit,
 }
 
 impl RenderTarget {
     pub fn all() -> &'static [RenderTarget] {
-        &[Self::Mastodon, Self::Bluesky, Self::Markdown]
+        &[Self::Mastodon, Self::Bluesky, Self::Markdown, Self::Reddit]
     }
 
     pub fn name(self) -> &'static str {
@@ -22,6 +23,7 @@ impl RenderTarget {
             Self::Mastodon => "mastodon",
             Self::Bluesky => "bluesky",
             Self::Markdown => "markdown",
+            Self::Reddit => "reddit",
         }
     }
 
@@ -30,6 +32,7 @@ impl RenderTarget {
             Self::Mastodon => "Mastodon",
             Self::Bluesky => "Bluesky",
             Self::Markdown => "Markdown",
+            Self::Reddit => "Reddit",
         }
     }
 

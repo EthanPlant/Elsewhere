@@ -50,6 +50,7 @@ pub enum RenderTargetArg {
     Mastodon,
     Bluesky,
     Markdown,
+    Reddit,
     All,
 }
 
@@ -59,6 +60,7 @@ impl RenderTargetArg {
             Self::Mastodon => Some(RenderTarget::Mastodon),
             Self::Bluesky => Some(RenderTarget::Bluesky),
             Self::Markdown => Some(RenderTarget::Markdown),
+            Self::Reddit => Some(RenderTarget::Reddit),
             Self::All => None,
         }
     }

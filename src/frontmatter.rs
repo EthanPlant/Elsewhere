@@ -1,8 +1,11 @@
+use std::str::FromStr;
+
 use anyhow::Result;
 
 use crate::{
+    config::RedditPostKind,
     error::ElsewhereError,
-    post::{ElsewhereFrontMatter, ElsewhereTargetOverride},
+    post::{ElsewhereFrontMatter, ElsewhereTargetOverride, RedditTargetOverride},
 };
 
 #[derive(Debug, Clone)]
@@ -231,6 +234,7 @@ fn optional_elsewhere_table(
         mastodon: optional_elsewhere_target(table, "mastodon")?,
         bluesky: optional_elsewhere_target(table, "bluesky")?,
         markdown: optional_elsewhere_target(table, "markdown")?,
+        reddit: optional_reddit_target(table, "reddit")?,
     }))
 }
 
@@ -252,5 +256,34 @@ fn optional_elsewhere_target(
 
     Ok(Some(ElsewhereTargetOverride {
         template: optional_string(target_table, "template")?,
+    }))
+}
+
+fn optional_reddit_target(
+    table: &toml::Table,
+    key: &'static str,
+) -> Result<Option<RedditTargetOverride>> {
+    let Some(value) = table.get(key) else {
+        return Ok(None);
+    };
+
+    let Some(target_table) = value.as_table() else {
+        return Err(ElsewhereError::InvalidFrontMatterField {
+            field: key,
+            expected: "a table",
+        }
+        .into());
+    };
+
+    let kind = optional_string(target_table, "kind")?
+        .and_then(|kind| Some(RedditPostKind::from_str(kind.as_str())))
+        .transpose()?;
+
+    Ok(Some(RedditTargetOverride {
+        subreddit: optional_string(target_table, "subreddit")?,
+        kind,
+        title_template: optional_string(target_table, "title")?,
+        body_template: optional_string(target_table, "body")?,
+        comment_template: optional_string(target_table, "comment")?,
     }))
 }

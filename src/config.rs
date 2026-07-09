@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -30,6 +31,8 @@ pub struct Config {
     pub bluesky: Option<SocialRendererConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub markdown: Option<LongFormRendererConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reddit: Option<RedditRendererConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,6 +104,7 @@ impl Config {
             mastodon: None,
             bluesky: None,
             markdown: None,
+            reddit: None,
         }
     }
 
@@ -192,6 +196,7 @@ impl Default for Config {
             mastodon: None,
             bluesky: None,
             markdown: None,
+            reddit: None,
         }
     }
 }
@@ -216,6 +221,63 @@ impl Default for ZolaConfig {
     fn default() -> Self {
         Self {
             section_url_from_path: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct RedditRendererConfig {
+    pub kind: RedditPostKind,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subreddit: Option<String>,
+
+    pub title_template: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub body_template: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub comment_template: Option<String>,
+
+    pub title_max_chars: usize,
+    pub body_max_chars: usize,
+    pub comment_max_chars: usize,
+}
+
+impl Default for RedditRendererConfig {
+    fn default() -> Self {
+        Self {
+            kind: RedditPostKind::Link,
+            subreddit: None,
+            title_template: "{title}".to_string(),
+            body_template: Some("{excerpt}\n\n{url}".to_string()),
+            comment_template: None,
+            title_max_chars: 300,
+            body_max_chars: 40_000,
+            comment_max_chars: 10_000,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RedditPostKind {
+    Link,
+    SelfPost,
+}
+
+impl FromStr for RedditPostKind {
+    type Err = ElsewhereError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "link" => Ok(RedditPostKind::Link),
+            "selfpost" => Ok(RedditPostKind::SelfPost),
+            _ => Err(ElsewhereError::InvalidFrontMatterField {
+                field: "reddit.kind",
+                expected: "link or selfpost",
+            }),
         }
     }
 }

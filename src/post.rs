@@ -1,3 +1,5 @@
+use crate::config::RedditPostKind;
+
 #[derive(Debug, Clone)]
 pub struct CanonicalPost {
     pub title: String,
@@ -49,6 +51,7 @@ pub struct ElsewhereFrontMatter {
     pub mastodon: Option<ElsewhereTargetOverride>,
     pub bluesky: Option<ElsewhereTargetOverride>,
     pub markdown: Option<ElsewhereTargetOverride>,
+    pub reddit: Option<RedditTargetOverride>,
 }
 
 impl ElsewhereFrontMatter {
@@ -65,4 +68,13 @@ impl ElsewhereFrontMatter {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ElsewhereTargetOverride {
     pub template: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RedditTargetOverride {
+    pub subreddit: Option<String>,
+    pub kind: Option<RedditPostKind>,
+    pub title_template: Option<String>,
+    pub body_template: Option<String>,
+    pub comment_template: Option<String>,
 }
