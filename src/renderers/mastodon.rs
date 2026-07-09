@@ -10,10 +10,9 @@ use crate::{
 
 const DEFAULT_TEMPLATE: &str = r#"{excerpt}
 
-New essay: {title}
+New post: {title}
 {url}
-
-{hashtags}"#;
+"#;
 
 const DEFAULT_MAX_CHARS: usize = 500;
 

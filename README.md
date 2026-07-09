@@ -75,7 +75,7 @@ Elsewhere currently supports:
 * Generic Markdown sites
 * Zola sites
 
-For Zola, Elsewhere can read `base_url` from the site’s existing `config.toml`.
+For Zola, Elsewhere can read `base_url` from the site’s existing `zola.toml`.
 
 ## Supported renderers
 
@@ -83,7 +83,12 @@ Elsewhere currently renders:
 
 * Mastodon
 * Bluesky
+* Reddit
 * Markdown
+
+Mastodon and Bluesky are short-form text targets.
+
+Reddit is a structured publishing target. It can prepare a link submission or self post, including a title, subreddit, URL or body, and optional suggested first comment. It does not post to Reddit for you. You still need to check the destination community, read the rules, and decide whether posting there is actually a good idea.
 
 The Markdown renderer produces a long-form publishing draft. It is suitable for Markdown-friendly publishing workflows, including tools such as Ghost, WriteFreely, Bear Blog, DEV.to, Hashnode, or any editor that accepts Markdown cleanly.
 
@@ -110,39 +115,53 @@ Elsewhere keeps the source file canonical, then produces a cleaner or differentl
 
 Given a post like this:
 
-```toml
+```md
 +++
-title = "The Boos Made Sense"
-description = "AI, graduation speeches, and the broken promise of technological disruption."
-date = "2026-06-14"
+title = "A Tiny Example Post"
+description = "A short demonstration post for Elsewhere's example project."
+date = "2026-01-15"
 
 [taxonomies]
-tags = ["ai", "platforms", "labour"]
+tags = ["example", "markdown", "posse"]
 
 [extra.elsewhere]
-excerpt = "A graduation ceremony is a strange place to sell uncertainty."
+excerpt = "This is a deliberately small example post used to test syndication drafts."
 
 [extra.elsewhere.mastodon]
 template = """
-The boos made sense.
+A tiny example appears.
 
 {excerpt}
 
 {url}
+"""
 
-{hashtags}
+[extra.elsewhere.reddit]
+subreddit = "example"
+kind = "link"
+title_template = "A Tiny Example Post"
+comment_template = """
+This is the suggested first comment for the example Reddit draft.
+
+{excerpt}
+
+Source:
+{url}
 """
 +++
 
-The boos made sense.
+This is a tiny example post.
 
-A graduation ceremony is a strange place to sell uncertainty.
+It exists so Elsewhere has something safe, boring, and copy-pastable to render during tests, demos, and documentation updates.
+
+The post is intentionally simple. It has a title, description, tags, a custom excerpt, a Mastodon override, a Reddit override, and enough body text to demonstrate the Markdown renderer.
 ```
 
 Elsewhere can plan all rendered outputs:
 
 ```sh
-elsewhere plan content/writing/the-boos-made-sense.md
+Reddit
+elsewhere plan content/writing/example-post.md
 ```
 
 Example output:
@@ -151,36 +170,54 @@ Example output:
 Elsewhere plan
 
 Canonical
-  Title: The Boos Made Sense
-  URL:   https://example.com/writing/the-boos-made-sense/
-  Tags:  ai, platforms, labour
+  Title: A Tiny Example Post
+  URL:   https://example.com/writing/example-post/
+  Tags:  example, markdown, posse
 
 Mastodon
   Status: ready
-  Length: 113 / 500
+  Length: 143 / 500
 
-  The boos made sense.
+  A tiny example appears.
 
-  A graduation ceremony is a strange place to sell uncertainty.
+  This is a deliberately small example post used to test syndication drafts.
 
-  https://example.com/writing/the-boos-made-sense/
-
-  #ai #platforms #labour
+  https://example.com/writing/example-post/
 
 Bluesky
   Status: ready
-  Length: 150 / 300
+  Length: 147 / 300
 
-  New essay: The Boos Made Sense
+  New post: A Tiny Example Post
 
-  AI, graduation speeches, and the broken promise of technological disruption.
-
-  https://example.com/writing/the-boos-made-sense/
+  This is a deliberately small example post used to test syndication drafts.
+  https://example.com/writing/example-post/
 
 Markdown
   Status: ready
-  Length: 276
-  Output: use `elsewhere render markdown content/writing/the-boos-made-sense.md > markdown.md`
+  Length: 508
+  Output: use `elsewhere render markdown content/writing/example-post.md > markdown.md`
+
+Reddit
+  Status: ready
+  Length: 332
+
+  Subreddit: r/example
+  Kind: link
+
+  Title:
+  A Tiny Example Post
+
+  URL:
+  https://example.com/writing/example-post/
+
+  Suggested first comment:
+  This is a deliberately small example post used to test syndication drafts.
+
+  Originally published here: https://example.com/writing/example-post/
+
+
+  Reminder: check the subreddit rules before posting.
 ```
 
 ## Configuration
