@@ -34,5 +34,6 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
         body,
         None,
         post.draft,
+        None,
     ))
 }

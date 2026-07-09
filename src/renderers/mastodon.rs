@@ -38,5 +38,6 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
         body,
         Some(max_chars),
         post.draft,
+        None,
     ))
 }

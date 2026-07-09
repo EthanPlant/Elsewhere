@@ -2,7 +2,11 @@ use std::{fmt, path::Path};
 
 use serde::Serialize;
 
-use crate::{renderers, target::RenderTarget, workspace::LoadedPost};
+use crate::{
+    renderers::{self, RenderedArtifact},
+    target::RenderTarget,
+    workspace::LoadedPost,
+};
 
 #[derive(Debug, Serialize)]
 pub struct PlanOutput {
@@ -46,6 +50,9 @@ pub struct PlanTarget {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub artifact: Option<RenderedArtifact>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -199,6 +206,7 @@ fn build_target_plan(loaded: &LoadedPost, post_path: &Path, target: RenderTarget
                 output,
                 warnings,
                 error: None,
+                artifact: rendered.artifact,
             }
         }
         Err(error) => PlanTarget {
@@ -210,6 +218,7 @@ fn build_target_plan(loaded: &LoadedPost, post_path: &Path, target: RenderTarget
             output: None,
             warnings: Vec::new(),
             error: Some(error.to_string()),
+            artifact: None,
         },
     }
 }

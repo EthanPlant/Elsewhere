@@ -3,7 +3,7 @@ use anyhow::Result;
 use crate::{
     config::{Config, RedditPostKind, RedditRendererConfig},
     post::CanonicalPost,
-    renderers::RenderedPost,
+    renderers::{RenderedArtifact, RenderedPost},
     target::RenderTarget,
     templates::render_template,
 };
@@ -35,7 +35,7 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
         );
     }
 
-    let body = match renderer_config.kind {
+    let (body, artifact) = match renderer_config.kind {
         RedditPostKind::Link => render_link_submission(
             post,
             config,
@@ -54,7 +54,8 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
         )?,
     };
 
-    let mut rendered = RenderedPost::new(RenderTarget::Reddit, body, None, post.draft);
+    let mut rendered =
+        RenderedPost::new(RenderTarget::Reddit, body, None, post.draft, Some(artifact));
     rendered.warnings.extend(warnings);
     Ok(rendered)
 }
@@ -66,7 +67,7 @@ fn render_link_submission(
     title: &str,
     subreddit: Option<&str>,
     warnings: &mut Vec<String>,
-) -> Result<String> {
+) -> Result<(String, RenderedArtifact)> {
     let url = post.canonical_url.as_deref().unwrap_or("");
 
     let comment = match &renderer_config.comment_template {
@@ -92,13 +93,22 @@ fn render_link_submission(
     output.push_str("\n\nURL:\n");
     output.push_str(url);
 
-    if let Some(comment) = comment {
+    if let Some(comment) = comment.as_ref() {
         output.push_str("\n\nSuggested first comment:\n");
-        output.push_str(&comment);
+        output.push_str(comment);
     }
 
     output.push_str("\n\nReminder: check the subreddit rules before posting.");
-    Ok(output)
+
+    let artifact = RenderedArtifact::Reddit {
+        subreddit: subreddit.map(str::to_string),
+        kind: RedditPostKind::Link,
+        title: title.to_string(),
+        url: Some(url.to_string()),
+        body: None,
+        comment: comment,
+    };
+    Ok((output, artifact))
 }
 
 fn render_self_submission(
@@ -108,7 +118,7 @@ fn render_self_submission(
     title: &str,
     subreddit: Option<&str>,
     warnings: &mut Vec<String>,
-) -> Result<String> {
+) -> Result<(String, RenderedArtifact)> {
     let template = renderer_config
         .body_template
         .as_deref()
@@ -132,7 +142,16 @@ fn render_self_submission(
     output.push_str(&body);
 
     output.push_str("\n\nReminder: check the subreddit rules before posting.");
-    Ok(output)
+
+    let artifact = RenderedArtifact::Reddit {
+        subreddit: subreddit.map(str::to_string),
+        kind: RedditPostKind::SelfPost,
+        title: title.to_string(),
+        url: None,
+        body: Some(body),
+        comment: None,
+    };
+    Ok((output, artifact))
 }
 
 fn push_header(output: &mut String, subreddit: Option<&str>, kind: &str) {
