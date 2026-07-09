@@ -33,7 +33,7 @@ impl CanonicalPost {
             .and_then(|elsewhere| elsewhere.excerpt.as_deref())
             .or(self.description.as_deref())
             .or(self.first_paragraph.as_deref())
-            .unwrap_or(&self.title.as_str())
+            .unwrap_or(self.title.as_str())
             .to_string()
     }
 

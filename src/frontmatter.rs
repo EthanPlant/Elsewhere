@@ -302,7 +302,7 @@ fn optional_reddit_target(
     };
 
     let kind = optional_string(target_table, "kind")?
-        .and_then(|kind| Some(RedditPostKind::from_str(kind.as_str())))
+        .map(|kind| RedditPostKind::from_str(kind.as_str()))
         .transpose()?;
 
     Ok(Some(RedditTargetOverride {

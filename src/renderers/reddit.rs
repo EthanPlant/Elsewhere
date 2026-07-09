@@ -106,7 +106,7 @@ fn render_link_submission(
         title: title.to_string(),
         url: Some(url.to_string()),
         body: None,
-        comment: comment,
+        comment,
     };
     Ok((output, artifact))
 }

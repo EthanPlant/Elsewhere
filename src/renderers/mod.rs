@@ -36,13 +36,13 @@ impl RenderedPost {
         let char_count = body.chars().count();
         let mut warnings = Vec::new();
 
-        if let Some(max_chars) = max_chars {
-            if char_count > max_chars {
-                warnings.push(format!(
-                    "Warning: {} render is {} characters. Configured limit is {}.",
-                    target, char_count, max_chars
-                ));
-            }
+        if let Some(max_chars) = max_chars
+            && char_count > max_chars
+        {
+            warnings.push(format!(
+                "Warning: {} render is {} characters. Configured limit is {}.",
+                target, char_count, max_chars
+            ));
         }
 
         if draft {
