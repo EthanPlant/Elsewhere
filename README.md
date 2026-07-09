@@ -311,4 +311,4 @@ Direct publishing may happen later, but only after the rendering workflow is sol
 ## License
 Elsewhere is published under the GNU General Public License, version 3 or later.
 
-See `COPYING` for details.
+See `LICENSE` for details.

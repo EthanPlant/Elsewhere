@@ -82,7 +82,7 @@ fn parse_toml_frontmatter(input: &str) -> Result<ParsedFrontMatter> {
         title: required_string(table, "title")?,
         description: optional_string(table, "description")?,
         date: optional_string_or_datetime(table, "date")?,
-        tags: optional_string_array(table, "tags")?,
+        tags: optional_tags(table)?,
         canonical_url: optional_string(table, "canonical_url")?,
         slug: optional_string(table, "slug")?,
         path: optional_string(table, "path")?,
@@ -187,6 +187,32 @@ fn optional_string_array(table: &toml::Table, field: &'static str) -> Result<Vec
     }
 
     Ok(values)
+}
+
+fn optional_tags(table: &toml::Table) -> Result<Vec<String>> {
+    let taxonomy_tags = optional_taxonomy_tags(table)?;
+
+    if !taxonomy_tags.is_empty() {
+        return Ok(taxonomy_tags);
+    }
+
+    optional_string_array(table, "tags")
+}
+
+fn optional_taxonomy_tags(table: &toml::Table) -> Result<Vec<String>> {
+    let Some(taxonomies) = table.get("taxonomies") else {
+        return Ok(Vec::new());
+    };
+
+    let Some(taxonomies) = taxonomies.as_table() else {
+        return Err(ElsewhereError::InvalidFrontMatterField {
+            field: "taxonomies",
+            expected: "a table",
+        }
+        .into());
+    };
+
+    optional_string_array(taxonomies, "tags")
 }
 
 fn optional_elsewhere_frontmatter(table: &toml::Table) -> Result<Option<ElsewhereFrontMatter>> {
