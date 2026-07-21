@@ -17,7 +17,7 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
     let subreddit = renderer_config
         .subreddit
         .as_deref()
-        .map(|value| value.trim_start_matches("r/").to_string());
+        .map(normalize_subreddit);
 
     let mut warnings = Vec::new();
 
@@ -41,7 +41,7 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
             config,
             &renderer_config,
             &title,
-            subreddit.as_deref(),
+            subreddit,
             &mut warnings,
         )?,
         RedditPostKind::SelfPost => render_self_submission(
@@ -49,7 +49,7 @@ pub fn render(post: &CanonicalPost, config: &Config) -> Result<RenderedPost> {
             config,
             &renderer_config,
             &title,
-            subreddit.as_deref(),
+            subreddit,
             &mut warnings,
         )?,
     };
@@ -154,6 +154,13 @@ fn render_self_submission(
     Ok((output, artifact))
 }
 
+fn normalize_subreddit(value: &str) -> &str {
+    value
+        .trim()
+        .trim_start_matches("/r/")
+        .trim_start_matches("r/")
+}
+
 fn push_header(output: &mut String, subreddit: Option<&str>, kind: &str) {
     output.push_str("Subreddit: ");
     match subreddit {
@@ -207,4 +214,66 @@ fn effective_reddit_config(post: &CanonicalPost, config: &Config) -> RedditRende
     }
 
     effective
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_subreddit_values() {
+        for (value, expected) in [
+            ("example", "example"),
+            ("r/example", "example"),
+            ("/r/example", "example"),
+            (" /r/example", "example"),
+        ] {
+            assert_eq!(normalize_subreddit(value), expected)
+        }
+    }
+
+    #[test]
+    fn renders_normalized_subreddit_values() {
+        for value in ["example", "r/example", "/r/example"] {
+            let config = Config {
+                reddit: Some(RedditRendererConfig {
+                    subreddit: Some(value.to_string()),
+                    ..RedditRendererConfig::default()
+                }),
+                ..Config::default()
+            };
+
+            let rendered = render(&test_post(), &config).unwrap();
+
+            assert!(
+                rendered
+                    .body
+                    .starts_with("Subreddit: r/example\nKind: link\n\n"),
+                "unexpected render for {value:?}: {}",
+                rendered.body
+            );
+
+            let Some(RenderedArtifact::Reddit { subreddit, .. }) = rendered.artifact else {
+                panic!("expected Reddit artifact for {value:?}");
+            };
+
+            assert_eq!(subreddit.as_deref(), Some("example"));
+        }
+    }
+
+    fn test_post() -> CanonicalPost {
+        CanonicalPost {
+            title: "Example".to_string(),
+            description: Some("Description.".to_string()),
+            date: None,
+            tags: Vec::new(),
+            canonical_url: Some("https://example.com/writing/example/".to_string()),
+            body_markdown: "Body.".to_string(),
+            first_paragraph: Some("First paragraph.".to_string()),
+            slug: Some("example".to_string()),
+            elsewhere: None,
+            path: None,
+            draft: false,
+        }
+    }
 }
