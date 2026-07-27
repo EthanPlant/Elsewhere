@@ -20,7 +20,7 @@ pub struct Cli {
 pub enum Commands {
     /// Create an elsewhere.toml configuration file.
     Init {
-        /// Source format to configure (defaults to `generic`)
+        /// Source format to configure
         #[arg(long, value_enum, default_value = "generic")]
         source: InitSourceArg,
 
