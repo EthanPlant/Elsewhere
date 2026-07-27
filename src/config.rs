@@ -89,22 +89,19 @@ pub struct LoadedConfig {
 }
 
 impl Config {
-    pub fn starter() -> Self {
-        Self {
-            site_url: Some("https://example.com".to_string()),
-            content_dir: "content".to_string(),
-            source: SourceKind::Generic,
-            defaults: Defaults {
-                canonical_phrase: "Originally published on my website:".to_string(),
+    pub fn starter(source: SourceKind) -> Self {
+        match source {
+            SourceKind::Generic => Self {
+                site_url: Some("https://example.com".to_string()),
+                source,
+                generic: Some(GenericConfig::default()),
+                ..Self::default()
             },
-
-            generic: Some(GenericConfig::default()),
-            zola: None,
-
-            mastodon: None,
-            bluesky: None,
-            markdown: None,
-            reddit: None,
+            SourceKind::Zola => Self {
+                source,
+                zola: Some(ZolaConfig::default()),
+                ..Self::default()
+            },
         }
     }
 
@@ -401,5 +398,36 @@ mod tests {
             path: None,
             draft: false,
         }
+    }
+
+    #[test]
+    fn generic_starter_serializes_generic_configuration() {
+        let serialized = toml::to_string_pretty(&Config::starter(SourceKind::Generic)).unwrap();
+
+        let value: toml::Value = toml::from_str(&serialized).unwrap();
+
+        assert_eq!(value["source"].as_str(), Some("generic"));
+        assert_eq!(value["content_dir"].as_str(), Some("content"));
+        assert_eq!(value["site_url"].as_str(), Some("https://example.com"));
+        assert_eq!(
+            value["generic"]["url_pattern"].as_str(),
+            Some("/writing/{slug}/")
+        );
+
+        assert!(value.get("zola").is_none());
+    }
+
+    #[test]
+    fn zola_starter_serializes_zola_configuration() {
+        let serialized = toml::to_string_pretty(&Config::starter(SourceKind::Zola)).unwrap();
+
+        let value: toml::Value = toml::from_str(&serialized).unwrap();
+
+        assert_eq!(value["source"].as_str(), Some("zola"));
+        assert_eq!(value["content_dir"].as_str(), Some("content"));
+        assert_eq!(value["zola"]["section_url_from_path"].as_bool(), Some(true));
+
+        assert!(value.get("site_url").is_none());
+        assert!(value.get("generic").is_none());
     }
 }

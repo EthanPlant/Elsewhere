@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 
 use crate::{
     cli::{Cli, Commands, RenderTargetArg},
-    config::Config,
+    config::{Config, SourceKind},
     error::ElsewhereError,
     plan::{build_plan, print_plan},
     renderers::{self, RenderedPost},
@@ -14,20 +14,20 @@ use crate::{
 
 pub fn run(cli: Cli) -> Result<()> {
     match cli.command {
-        Commands::Init { force } => init(force),
+        Commands::Init { source, force } => init(source.into(), force),
         Commands::Plan { json, post } => plan(post, json),
         Commands::Render { target, post } => render(target, post),
     }
 }
 
-fn init(force: bool) -> Result<()> {
+fn init(source: SourceKind, force: bool) -> Result<()> {
     let path = PathBuf::from("elsewhere.toml");
 
     if path.exists() && !force {
         return Err(ElsewhereError::ConfigExists(path).into());
     }
 
-    let config = Config::starter();
+    let config = Config::starter(source);
     let serialized =
         toml::to_string_pretty(&config).context("failed to serialize starter configuration")?;
 
