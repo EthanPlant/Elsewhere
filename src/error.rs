@@ -50,4 +50,7 @@ pub enum ElsewhereError {
         "site URL is not configured; set `site_url` in elsewhere.toml or use source = \"zola\" with a Zola config.toml containing base_url"
     )]
     SiteUrlNotConfigured,
+
+    #[error("source config not found")]
+    SourceConfigNotFound,
 }
