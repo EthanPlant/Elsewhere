@@ -25,7 +25,7 @@ New post: {title}
 
 [reddit]
 kind = "link"
-subreddit = "/r/example"
+subreddit = "example"
 title_template = "{title}"
 comment_template = """
 {excerpt}

@@ -268,7 +268,7 @@ body_template = """
 """
 ```
 
-The `subreddit` value may be written with or without `r/`.
+The `subreddit` value may be written with or without `r/` or `/r/`.
 
 These are equivalent:
 
@@ -278,6 +278,10 @@ subreddit = "example"
 
 ```toml
 subreddit = "r/example"
+```
+
+```toml
+subreddit = "/r/example"
 ```
 
 Per-post Reddit overrides are supported.
