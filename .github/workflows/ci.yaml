@@ -37,6 +37,25 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --all-targets --all-features
 
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Check line coverage
+        run: >
+          cargo llvm-cov
+          --workspace
+          --all-targets
+          --all-features
+          --locked
+          --fail-under-lines 70
+
   build:
     name: build
     runs-on: ubuntu-latest
