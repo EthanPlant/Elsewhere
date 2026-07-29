@@ -261,6 +261,85 @@ mod tests {
         }
     }
 
+    #[test]
+    fn link_submission_has_structured_artifact() {
+        let config = Config {
+            reddit: Some(RedditRendererConfig {
+                subreddit: Some("/r/example".to_string()),
+                kind: RedditPostKind::Link,
+                title_template: "Discussion: {title}".to_string(),
+                comment_template: Some("Original post: {url}".to_string()),
+                ..RedditRendererConfig::default()
+            }),
+            ..Config::default()
+        };
+
+        let rendered = render(&test_post(), &config).unwrap();
+
+        let Some(RenderedArtifact::Reddit {
+            subreddit,
+            kind,
+            title,
+            url,
+            body,
+            comment,
+        }) = rendered.artifact
+        else {
+            panic!("expected Reddit artifact");
+        };
+
+        assert_eq!(subreddit.as_deref(), Some("example"));
+        assert_eq!(kind, RedditPostKind::Link);
+        assert_eq!(title, "Discussion: Example");
+        assert_eq!(url.as_deref(), Some("https://example.com/writing/example/"));
+        assert_eq!(body, None);
+        assert_eq!(
+            comment.as_deref(),
+            Some("Original post: https://example.com/writing/example/")
+        );
+    }
+
+    #[test]
+    fn self_submission_has_structured_artifact() {
+        let config = Config {
+            reddit: Some(RedditRendererConfig {
+                subreddit: Some("r/example".to_string()),
+                kind: RedditPostKind::SelfPost,
+                title_template: "Discussion: {title}".to_string(),
+                body_template: Some("{excerpt}\n\nSource: {url}".to_string()),
+                ..RedditRendererConfig::default()
+            }),
+            ..Config::default()
+        };
+
+        let rendered = render(&test_post(), &config).unwrap();
+
+        let Some(RenderedArtifact::Reddit {
+            subreddit,
+            kind,
+            title,
+            url,
+            body,
+            comment,
+        }) = rendered.artifact
+        else {
+            panic!("expected Reddit artifact");
+        };
+
+        assert_eq!(subreddit.as_deref(), Some("example"));
+        assert_eq!(kind, RedditPostKind::SelfPost);
+        assert_eq!(title, "Discussion: Example");
+        assert_eq!(url, None);
+        assert_eq!(
+            body.as_deref(),
+            Some(
+                "Description.\n\n\
+                 Source: https://example.com/writing/example/"
+            )
+        );
+        assert_eq!(comment, None);
+    }
+
     fn test_post() -> CanonicalPost {
         CanonicalPost {
             title: "Example".to_string(),

@@ -239,3 +239,75 @@ fn normalize_warning(warning: &str) -> String {
         .unwrap_or(warning)
         .to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use serde_json::json;
+
+    use super::*;
+    use crate::{
+        config::{Config, LoadedConfig, RedditPostKind, RedditRendererConfig},
+        post::CanonicalPost,
+        workspace::LoadedPost,
+    };
+
+    #[test]
+    fn json_plan_includes_reddit_artifact() {
+        let loaded = LoadedPost {
+            config: LoadedConfig {
+                config: Config {
+                    reddit: Some(RedditRendererConfig {
+                        subreddit: Some("/r/example".to_string()),
+                        kind: RedditPostKind::Link,
+                        title_template: "Discussion: {title}".to_string(),
+                        comment_template: Some("Original post: {url}".to_string()),
+                        ..RedditRendererConfig::default()
+                    }),
+                    ..Config::default()
+                },
+                root_dir: PathBuf::from("/site"),
+            },
+            post: test_post(),
+        };
+
+        let plan = build_plan(&loaded, std::path::Path::new("content/writing/example.md"));
+        let value = serde_json::to_value(plan).unwrap();
+
+        let reddit = value["targets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|target| target["target"].as_str() == Some("reddit"))
+            .expect("expected Reddit target in plan");
+
+        assert_eq!(
+            reddit["artifact"],
+            json!({
+                "type": "reddit",
+                "subreddit": "example",
+                "kind": "link",
+                "title": "Discussion: Example",
+                "url": "https://example.com/writing/example/",
+                "comment": "Original post: https://example.com/writing/example/"
+            })
+        );
+    }
+
+    fn test_post() -> CanonicalPost {
+        CanonicalPost {
+            title: "Example".to_string(),
+            description: Some("Description.".to_string()),
+            date: None,
+            tags: Vec::new(),
+            canonical_url: Some("https://example.com/writing/example/".to_string()),
+            body_markdown: "Body.".to_string(),
+            first_paragraph: Some("First paragraph.".to_string()),
+            slug: Some("example".to_string()),
+            elsewhere: None,
+            path: None,
+            draft: false,
+        }
+    }
+}
