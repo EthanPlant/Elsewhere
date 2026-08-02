@@ -1,68 +1,84 @@
 # Elsewhere
 
-Elsewhere is a local POSSE CLI for static-site writers.
+Elsewhere is a small POSSE CLI for static-site writers.
 
-It treats your website as the canonical source of your writing and renders platform-specific publishing drafts for other places.
+It reads posts from your website, turns them into platform-specific publishing drafts, and lets you review and edit those drafts before posting them elsewhere.
+
+It is not a social media dashboard. It is not an automatic publishing service. It's a little dispatch desk for your website.
+
+```text
+write -> plan -> review -> render -> edit -> publish manually
+```
 
 Your website is the home. Platforms are edges.
 
 ## Why?
 
-Publishing on the web often means copying the same post into several different places.
+Your website should be the source of truth.
 
-Mastodon wants one shape. Bluesky wants another. Reddit has titles, communities, link posts, self posts, and rules. Long-form publishing tools often want Markdown, HTML, or some editor-specific paste format. Each platform has its own limits, templates, habits, and annoying vibes.
+Publishing on the web often means copying the same post into several different places. Mastodon wants one shape. Bluesky wants another. Reddit has communities, titles, link posts, self posts, and suggested first comments. Long-form publishing tools may want a clean Markdown draft without your static site's front matter and local metadata.
 
-Elsewhere keeps the original on your site and renders drafts from there.
+Elsewhere turns a post from your static site into publishing drafts shaped for those destinations.
 
-It does not make platforms the source of truth.
+The original remains on your website. Everything else is derived.
 
-## Install
+## Status
 
-From crates.io:
+Elsewhere is under active development.
+
+The current implementation can:
+
+- read posts from generic Markdown and Zola sites
+- derive canonical URLs from source metadata and content paths
+- apply site-level templates and per-post editorial overrides
+- preview every configured target before rendering
+- emit machine-readable plans as JSON
+- render Mastodon and Bluesky drafts
+- prepare structured Reddit link or self-post drafts
+- export long-form Markdown drafts
+- warn about draft posts and configured character limits
+
+Elsewhere does not publish directly to any platform.
+
+## Quick Start
+
+Install Elsewhere from crates.io:
 
 ```sh
 cargo install elsewhere
 ```
 
-From a local checkout:
+From the root of a Zola site, create an `elsewhere.toml` configuration file:
 
 ```sh
-cargo install --path .
+elsewhere init --source zola
 ```
 
-Then run:
+For a generic Markdown site, use:
 
 ```sh
-elsewhere --help
+elsewhere init --source generic
 ```
 
-## Quick start
-
-Create an `elsewhere.toml` file in the root of your static site:
-
-```sh
-elsewhere init
-```
-
-Preview how Elsewhere understands a post:
+Review how Elsewhere understands a post and what it would produce:
 
 ```sh
 elsewhere plan content/writing/my-post.md
 ```
 
-Render a post for Mastodon:
+Render a Mastodon draft:
 
 ```sh
 elsewhere render mastodon content/writing/my-post.md
 ```
 
-Render a Reddit draft:
+Prepare a Reddit draft:
 
 ```sh
 elsewhere render reddit content/writing/my-post.md
 ```
 
-Render all supported targets:
+Render every supported target:
 
 ```sh
 elsewhere render all content/writing/my-post.md
@@ -71,256 +87,38 @@ elsewhere render all content/writing/my-post.md
 Export a long-form Markdown draft:
 
 ```sh
-elsewhere render markdown content/writing/my-post.md > post.md
+elsewhere render markdown content/writing/my-post.md > my-post.md
 ```
 
-## Supported sources
+Elsewhere writes rendered drafts to standard output. Review and edit them before publishing.
 
-Elsewhere currently supports:
+## Documentation
 
-* Generic Markdown sites
-* Zola sites
+* [Getting Started](docs/getting-started.md)
+* [Configuration](docs/configuration.md)
+* [Sources](docs/sources.md)
+* [Planning and Review](docs/planning.md)
+* [Renderers](docs/renderers.md)
+* [Using Elsewhere with Zola](docs/zola.md)
+* [Using Generic Markdown](docs/generic-markdown.md)
+* [JSON Schemas](docs/schemas.md)
+* [Security Model](docs/security.md)
+* [Roadmap](docs/roadmap.md)
 
-For Zola, Elsewhere can read `base_url` from the site’s existing `config.toml`.
+A complete runnable Zola project is available in [`examples/zola`](examples/zola).
 
-## Supported renderers
+## Security
 
-Elsewhere currently renders:
+Elsewhere is a local command-line tool. It reads local configuration and Markdown files, renders publishing drafts, and writes those drafts to standard output.
 
-* Mastodon
-* Bluesky
-* Reddit
-* Markdown
+It does not authenticate with platforms, store platform credentials, or publish anything over the network.
 
-Mastodon and Bluesky are short-form text targets.
+Rendered drafts may contain unpublished writing. Be careful when redirecting output, recording terminal sessions, or running Elsewhere in CI.
 
-Reddit is a structured publishing target. It can prepare a link submission or self post, including a title, subreddit, URL or body, and optional suggested first comment. It does not post to Reddit for you.
-
-Markdown produces a long-form publishing draft. It is suitable for Markdown-friendly publishing workflows, including tools such as Ghost, WriteFreely, Bear Blog, DEV.to, Hashnode, or any editor that accepts Markdown cleanly.
-
-Elsewhere does not publish directly to any platform. It prepares the output; you decide where it goes.
-
-## Example
-
-Given a Zola post like this:
-
-```toml
-+++
-title = "A Tiny Example Post"
-description = "A short demonstration post for Elsewhere's example project."
-date = "2026-01-15"
-
-[taxonomies]
-tags = ["example", "markdown", "posse"]
-
-[extra.elsewhere]
-excerpt = "This is a deliberately small example post used to test syndication drafts."
-
-[extra.elsewhere.mastodon]
-template = """
-A tiny example appears.
-
-{excerpt}
-
-{url}
-"""
-
-[extra.elsewhere.reddit]
-subreddit = "example"
-kind = "link"
-title_template = "A Tiny Example Post"
-comment_template = """
-This is the suggested first comment for the example Reddit draft.
-
-{excerpt}
-
-Source:
-{url}
-"""
-+++
-
-This is a tiny example post.
-
-It exists so Elsewhere has something safe, boring, and copy-pastable to render during tests, demos, and documentation updates.
-```
-
-Elsewhere can plan all rendered outputs:
-
-```sh
-elsewhere plan content/writing/example-post.md
-```
-
-Example output:
-
-```text
-Elsewhere plan
-
-Canonical
-  Title: A Tiny Example Post
-  URL:   https://example.com/writing/example-post/
-  Tags:  example, markdown, posse
-
-Mastodon
-  Status: ready
-  Length: 145 / 500
-
-  A tiny example appears.
-
-  This is a deliberately small example post used to test syndication drafts.
-
-  https://example.com/writing/example-post/
-
-Bluesky
-  Status: ready
-  Length: 143 / 300
-
-  New post: A Tiny Example Post
-
-  This is a deliberately small example post used to test syndication drafts.
-
-  https://example.com/writing/example-post/
-
-Reddit
-  Status: ready
-  Length: 252
-
-  Subreddit: r/example
-  Kind: link
-
-  Title:
-  A Tiny Example Post
-
-  URL:
-  https://example.com/writing/example-post/
-
-  Suggested first comment:
-  This is the suggested first comment for the example Reddit draft.
-
-  This is a deliberately small example post used to test syndication drafts.
-
-  Source:
-  https://example.com/writing/example-post/
-
-Markdown
-  Status: ready
-  Length: 390
-  Output: use `elsewhere render markdown content/writing/example-post.md > markdown.md`
-```
-
-A complete runnable example is available in [`examples/zola`](examples/zola).
-
-Try it from the repository root:
-
-```sh
-cd examples/zola
-cargo run --manifest-path ../../Cargo.toml -- plan content/writing/example-post.md
-cargo run --manifest-path ../../Cargo.toml -- render all content/writing/example-post.md
-cargo run --manifest-path ../../Cargo.toml -- render markdown content/writing/example-post.md > example-post.md.out
-```
-
-## Configuration
-
-Elsewhere uses an `elsewhere.toml` file in the root of your static site.
-
-A small Zola configuration looks like this:
-
-```toml
-content_dir = "content"
-source = "zola"
-
-[defaults]
-canonical_phrase = "Originally published on my website:"
-
-[zola]
-section_url_from_path = true
-```
-
-A small generic Markdown configuration looks like this:
-
-```toml
-site_url = "https://example.com"
-content_dir = "content"
-source = "generic"
-
-[generic]
-url_pattern = "/writing/{slug}/"
-```
-
-Renderer templates, Reddit options, Markdown export, and per-post overrides are documented in [`docs/configuration.md`](docs/configuration.md).
-
-Renderer behaviour is documented in [`docs/renderers.md`](docs/renderers.md).
-
-## Why export Markdown if Elsewhere already reads Markdown?
-
-Elsewhere reads the Markdown used by your static site. That file is the canonical source.
-
-The Markdown export is not the same file copied somewhere else. It is a rendered draft for another publishing context.
-
-Your source post may contain front matter, Zola taxonomies, draft flags, aliases, site-specific paths, shortcodes, internal metadata, and Elsewhere editorial overrides. The exported Markdown is shaped for publication elsewhere: title, description, body, canonical link, and whatever template you configured for that target.
-
-In other words:
-
-```text
-site Markdown in
-publishing Markdown out
-```
-
-Elsewhere keeps the source file canonical, then produces a cleaner or differently shaped Markdown draft for tools that accept Markdown well.
-
-## Philosophy
-
-Elsewhere is deliberately small.
-
-It has:
-
-* no account
-* no hosted service
-* no dashboard
-* no analytics
-* no scheduling
-* no automatic posting
-* no platform as the source of truth
-
-It reads posts from your static site and renders platform-specific publishing drafts.
-
-That is all. The restraint is the point.
-
-Elsewhere keeps the final decision with the human. It can prepare drafts, show previews, structure platform-specific output, and warn about obvious problems. But it does not post for you. That is deliberate. The tool should support editorial judgement, not replace it.
-
-The intended workflow is:
-
-```text
-plan
-review
-render
-edit
-post manually
-```
-
-That friction is useful. It makes the writer look at the output before publishing. It leaves room for taste, context, community norms, and the simple question of whether something should be posted somewhere at all.
-
-This matters especially for places like Reddit, where the question is not merely “does this fit the template?” but “does this belong in this community?” Elsewhere can prepare a Reddit draft. It cannot read the room for you. It cannot turn syndication into permission.
-
-Any tool that makes publishing easier can be misused. Elsewhere cannot fully prevent that. Someone can always wrap a CLI in a shell script and make everyone’s day worse. But Elsewhere should not make that the natural path. It should not be a spray-and-pray spam machine. It should make thoughtful syndication easier while keeping the final act of publishing in human hands.
-
-## Roadmap
-
-Possible future work:
-
-* Hugo support
-* Eleventy support
-* more render targets
-* HTML export for rich-text editors
-* clipboard support for editors that accept `text/html`
-* posting APIs
-* syndication tracking
-* `u-syndication` backlinks
-* better plain-text extraction from Markdown
-
-Direct publishing may happen later, but only after the rendering workflow is solid.
+Read the [security model](docs/security.md) for the project's trust boundaries. Vulnerabilities should be reported according to [SECURITY.md](SECURITY.md).
 
 ## License
 
-Elsewhere is licensed under the GNU General Public License, version 3 or later.
+Elsewhere is licensed under the GNU General Public License, version 3 or any later version.
 
-See [`LICENSE`](LICENSE) for details.
+See [LICENSE](LICENSE).
