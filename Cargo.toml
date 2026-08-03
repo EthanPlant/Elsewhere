@@ -1,12 +1,13 @@
 [package]
 name = "elsewhere"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "GPL-3.0-or-later"
-description = "A local POSSE CLI for static-site writers."
+description = "A local POSSE and cross-posting CLI for static-site writers."
 repository = "https://github.com/EthanPlant/Elsewhere"
+homepage = "https://ethanplant.ca/projects/elsewhere/"
 readme = "README.md"
-keywords = ["posse", "indieweb", "cli", "markdown", "static-site"]
+keywords = ["posse", "indieweb", "cli", "syndication", "static-site"]
 categories = ["command-line-utilities"]
 
 [dependencies]
